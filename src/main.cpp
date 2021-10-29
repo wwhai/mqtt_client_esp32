@@ -30,12 +30,12 @@ void connectToMqtt()
 
 void WiFiEvent(WiFiEvent_t event)
 {
-  Serial.printf("[WiFi-event] event: %d\n", event);
+  Serial.printf("[WiFi-event] event: %d", event);
+  Serial.println();
   switch (event)
   {
   case SYSTEM_EVENT_STA_GOT_IP:
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
+    Serial.println("WiFi connected, IP address: ");
     Serial.println(WiFi.localIP());
     connectToMqtt();
     break;
@@ -50,8 +50,7 @@ void WiFiEvent(WiFiEvent_t event)
 
 void onMqttConnect(bool sessionPresent)
 {
-  Serial.print("Connected to MQTT, Session present: ");
-  Serial.println(sessionPresent);
+  Serial.println("Connected MQTT server successfully.");
   mqttClient.subscribe(S2C_TOPIC, 2);
 }
 
@@ -67,25 +66,22 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
 
 void onMqttSubscribe(uint16_t packetId, uint8_t qos)
 {
-  Serial.println("Subscribe acknowledged.");
-  Serial.print("  packetId: ");
-  Serial.println(packetId);
-  Serial.print("  qos: ");
-  Serial.println(qos);
 }
 
 void onMqttUnsubscribe(uint16_t packetId)
 {
-  Serial.println("Unsubscribe acknowledged.");
-  Serial.print("  packetId: ");
-  Serial.println(packetId);
 }
 
-void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total)
+void onMqttMessage(char *topic, char *payload,
+                   AsyncMqttClientMessageProperties properties,
+                   size_t len, size_t index,
+                   size_t total)
 {
   Serial.println("Publish received.");
   Serial.print("  topic: ");
   Serial.println(topic);
+  Serial.print("  payload: ");
+  Serial.println(payload);
   Serial.print("  qos: ");
   Serial.println(properties.qos);
   Serial.print("  dup: ");
@@ -102,9 +98,6 @@ void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties 
 
 void onMqttPublish(uint16_t packetId)
 {
-  Serial.println("Publish acknowledged.");
-  Serial.print("  packetId: ");
-  Serial.println(packetId);
 }
 
 void setup()
@@ -131,4 +124,13 @@ void setup()
 
 void loop()
 {
+  String data = Serial.readStringUntil('\n');
+  if (mqttClient.connected())
+  {
+    if (data.length() > 0)
+    {
+      mqttClient.publish(C2S_TOPIC, 2, false, data.c_str());
+    }
+  }
+  delay(10);
 }
